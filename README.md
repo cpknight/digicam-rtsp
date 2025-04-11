@@ -26,7 +26,7 @@ This project provides a Bash script (`digicam-rtsp.sh`) that captures periodic s
 - Test Manually: `sudo ./digicam-rtsp.sh`
   - Without a camera, it’ll exit with “Error: No camera detected.”
   - With a camera, test the stream: vlc rtsp://localhost:8554/stream.
-- Install as a Service: [CODE] sudo ./install_digicam_rtsp.sh [/CODE]
+- Install as a Service: `sudo ./install_digicam_rtsp.sh`
   - Installs to `/usr/local/bin/digicam-rtsp.sh` and sets up `/etc/systemd/system/digicam-rtsp.service`.
 - Manage the Service: 
 ```bash
@@ -38,24 +38,24 @@ sudo systemctl disable digicam-rtsp # To prevent auto-start
 
 ## Usage
 
-    Check Camera Detection: [CODE] sudo gphoto2 --auto-detect [/CODE]
-        If no camera is listed, ensure it’s connected, powered on, and supported.
-    View Stream: [CODE] vlc rtsp://localhost:8554/stream [/CODE]
-    Debug Logs:
-        During runtime: cat /tmp/digicam-rtsp/instance_*/debug.log
-        After exit: cat /tmp/digicam-rtsp/last_debug.log
+- **Check Camera Detection**: `sudo gphoto2 --auto-detect`
+  - If no camera is listed, ensure it’s connected, powered on, and supported.
+- **View Stream**: eg. `vlc rtsp://localhost:8554/stream`
+- **Debug Logs**:
+  - _During runtime_: `cat /tmp/digicam-rtsp/instance_*/debug.log`
+  - _After exit_: `cat /tmp/digicam-rtsp/last_debug.log`
 
-Customization
+## Customization
 
 This project is tailored for Linux with specific paths and tools. Here’s how to adapt it:
-Non-Linux Systems (e.g., macOS, Windows)
 
-    Paths:
-        Replace /tmp/digicam-rtsp in digicam-rtsp.sh (line ~5) with a suitable temp directory:
-            macOS: /tmp/digicam-rtsp works, but /var/tmp/digicam-rtsp is more persistent.
-            Windows (WSL): Use /mnt/c/temp/digicam-rtsp or similar.
-        Update INSTALL_PATH in install_digicam_rtsp.sh (line ~5) to a bin directory (e.g., /usr/local/bin on macOS, or a custom path on Windows).
-    Systemd Service:
+- **Non-Linux Systems** (e.g., macOS, Windows)
+
+  - Paths: Replace `/tmp/digicam-rtsp` in `digicam-rtsp.sh` (line ~5) with a suitable temp directory:
+    - `macOS`: `/tmp/digicam-rtsp` works, but `/var/tmp/digicam-rtsp` is more persistent.
+    - `Windows` (WSL): Use `/mnt/c/temp/digicam-rtsp` or similar.
+    - Update `INSTALL_PATH` in `install_digicam_rtsp.sh` (line ~5) to a `bin` directory (e.g., `/usr/local/bin` on macOS, or a custom path on Windows).
+    - Systemd Service:
         digicam-rtsp.service is Linux-specific. For macOS, use launchd (create a .plist file); for Windows, use Task Scheduler or a service wrapper. Replace install_digicam_rtsp.sh with a custom setup script.
     Tools:
         gphoto2 and ffmpeg are available on macOS via Homebrew (brew install gphoto2 ffmpeg). On Windows, install via WSL or native binaries, adjusting command paths in digicam-rtsp.sh.
