@@ -1,0 +1,17 @@
+[Unit]
+Description=Digital Camera RTSP Streaming Service
+After=network.target systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+
+[Service]
+ExecStart=/usr/local/bin/digicam-rtsp.sh
+ExecStop=/bin/kill -TERM $MAINPID
+Restart=on-failure
+User=root
+Group=root
+WorkingDirectory=/tmp
+KillMode=process
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
