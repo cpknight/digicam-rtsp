@@ -16,10 +16,10 @@ It includes an installer script (`install_digicam_rtsp.sh`) to set up the servic
 
 ## Prerequisites
 
-- Linux: Tested on Ubuntu/Debian-like systems; requires sudo privileges.
+- `Linux`: Tested on Ubuntu/Debian-like systems; requires `sudo` privileges.
 - `gphoto2`: For camera control (`sudo apt-get install gphoto2`).
 - `ffmpeg`: For RTSP streaming (`sudo apt-get install ffmpeg`).
-- A USB-connected digital camera supported by gphoto2 (check with gphoto2 --list-cameras).
+- A USB-connected digital camera supported by `gphoto2` (check with `gphoto2 --list-cameras`).
 
 ## Installation
 
