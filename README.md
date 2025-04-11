@@ -1,6 +1,6 @@
-# digicam-rtsp
+# :camera_flash: digicam-rtsp
 
-Stream snapshots from a :camera: digital camera to an RTSP feed using **gPhoto2** and **FFmpeg** on **Linux**.
+Stream snapshots from a digital camera to an RTSP feed using **gPhoto2** and **FFmpeg** on **Linux**.
 
 This project provides a Bash script (`digicam-rtsp.sh`) that captures periodic snapshots from a USB-connected digital camera using `gphoto2`, converts them into an RTSP stream with `ffmpeg`, and runs as a systemd service. 
 
