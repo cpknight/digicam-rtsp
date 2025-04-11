@@ -23,14 +23,14 @@ It includes an installer script (`install_digicam_rtsp.sh`) to set up the servic
 
 ## Installation
 
-- Clone the Repository: `git clone https://github.com/<your-username>/digicam-rtsp.git cd digicam-rtsp`
-- Make Scripts Executable: `chmod +x digicam-rtsp.sh install_digicam_rtsp.sh`
-- Test Manually: `sudo ./digicam-rtsp.sh`
+- **Clone the Repository**: `git clone https://github.com/cpknight/digicam-rtsp.git; cd digicam-rtsp`
+- **Make Scripts Executable**: `chmod +x digicam-rtsp.sh install_digicam_rtsp.sh`
+- **Test Manually**: `sudo ./digicam-rtsp.sh`
   - Without a camera, it’ll exit with “Error: No camera detected.”
   - With a camera, test the stream: vlc rtsp://localhost:8554/stream.
-- Install as a Service: `sudo ./install_digicam_rtsp.sh`
+- **Install as a Service**: `sudo ./install_digicam_rtsp.sh`
   - Installs to `/usr/local/bin/digicam-rtsp.sh` and sets up `/etc/systemd/system/digicam-rtsp.service`.
-- Manage the Service: 
+- **Manage the Service**: 
 ```bash
 sudo systemctl start digicam-rtsp 
 sudo systemctl stop digicam-rtsp 
@@ -49,60 +49,52 @@ sudo systemctl disable digicam-rtsp # To prevent auto-start
 
 ## Customization
 
-This project is tailored for Linux with specific paths and tools. Here’s how to adapt it:
+### macOS or Windows:
 
-- **Non-Linux Systems** (e.g., macOS, Windows)
+This project is tailored for Linux with specific paths and tools. Here’s how to adapt it (e.g., macOS, Windows):
 
-  - Paths: Replace `/tmp/digicam-rtsp` in `digicam-rtsp.sh` (line ~5) with a suitable temp directory:
-    - `macOS`: `/tmp/digicam-rtsp` works, but `/var/tmp/digicam-rtsp` is more persistent.
-    - `Windows` (WSL): Use `/mnt/c/temp/digicam-rtsp` or similar.
-    - Update `INSTALL_PATH` in `install_digicam_rtsp.sh` (line ~5) to a `bin` directory (e.g., `/usr/local/bin` on macOS, or a custom path on Windows).
-    - Systemd Service:
-        digicam-rtsp.service is Linux-specific. For macOS, use launchd (create a .plist file); for Windows, use Task Scheduler or a service wrapper. Replace install_digicam_rtsp.sh with a custom setup script.
-    Tools:
-        gphoto2 and ffmpeg are available on macOS via Homebrew (brew install gphoto2 ffmpeg). On Windows, install via WSL or native binaries, adjusting command paths in digicam-rtsp.sh.
+- **Paths**: Replace `/tmp/digicam-rtsp` in `digicam-rtsp.sh` (line ~5) with a suitable temp directory:
+  - `macOS`: `/tmp/digicam-rtsp` works, but `/var/tmp/digicam-rtsp` is more persistent.
+  - `Windows` (WSL): Use `/mnt/c/temp/digicam-rtsp` or similar.
+- **Installer**: Update `INSTALL_PATH` in `install_digicam_rtsp.sh` (line ~5) to a `bin` directory (e.g., `/usr/local/bin` on macOS, or a custom path on Windows).
+- **`Systemd` Service**:
+  - `digicam-rtsp.service` is Linux-specific. For macOS, use launchd (create a `.plist` file); for Windows, use Task Scheduler or a service wrapper. Replace `install_digicam_rtsp.sh` with a custom setup script.
+- **Tools**: `gphoto2` and `ffmpeg` are available on macOS via Homebrew (`brew install gphoto2 ffmpeg`). On Windows, install via WSL or native binaries, adjusting command paths in `digicam-rtsp.sh`.
 
-Camera-Specific Tweaks
+### Camera-Specific Tweaks:
 
-    Unsupported Cameras:
-        Check compatibility: gphoto2 --list-cameras.
-        Modify the gphoto2 command in digicam-rtsp.sh (line ~50, within write_capture_script) with camera-specific flags (e.g., --port usb:001,002).
-    Capture Frequency:
-        Adjust sleep 12 in digicam-rtsp.sh (line ~70) to change snapshot frequency (e.g., sleep 6 for 10/minute).
+- **Unsupported Cameras**:
+  - **Check compatibility**: `gphoto2 --list-cameras` and modify the gphoto2 command in digicam-rtsp.sh (line ~50, within `write_capture_script`) with camera-specific flags (e.g., `--port usb:001,002`).
+  - **Capture Frequency**: Adjust sleep 12 in `digicam-rtsp.sh` (line ~70) to change snapshot frequency (e.g., `sleep 6` for 10/minute).
 
-Stream Settings
+### Stream Settings
 
-    RTSP URL:
-        Change rtsp://localhost:8554/stream in digicam-rtsp.sh (line ~300) to a different port or hostname (e.g., rtsp://0.0.0.0:8555/mystream).
-    Video Quality:
-       Modify the ffmpeg command in digicam-rtsp.sh (line ~300) with options like -b:v 1M (bitrate) or -s 640x480 (resolution).
+- **RTSP URL**: Change `rtsp://localhost:8554/stream` in `digicam-rtsp.sh` (line ~300) to a different port or hostname (e.g., `rtsp://0.0.0.0:8555/mystream`).
+- **Video Quality**: Modify the `ffmpeg` command in `digicam-rtsp.sh` (line ~300) with options like `-b:v 1M (bitrate)` or `-s 640x480` (resolution).
 
-Persistent Storage
+### Persistent Storage
 
-    Change BASE_TEMP_DIR in digicam-rtsp.sh (line ~5) to /var/tmp/digicam-rtsp or a custom path for logs/snapshots to survive reboots.
+Change `BASE_TEMP_DIR` in `digicam-rtsp.sh` (line ~5) to `/var/tmp/digicam-rtsp` or a custom path for logs/snapshots to survive reboots.
 
-Troubleshooting
+## Troubleshooting
 
-    No Camera Detected:
-        Run sudo gphoto2 --auto-detect. If empty, check USB connection or udev rules (e.g., for Canon: echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="04a9", MODE="0666", GROUP="plugdev"' | sudo tee /etc/udev/rules.d/99-canon.rules).
-    No Stream:
-        Ensure ffmpeg is installed and test manually: ffmpeg -re -loop 1 -i test.jpg -f rtsp rtsp://localhost:8554/stream.
-    Logs Missing:
-        Verify /tmp permissions: ls -ld /tmp (should be drwxrwxrwt). Fix with sudo chmod 1777 /tmp.
+- **No Camera Detected**: Run `sudo gphoto2 --auto-detect`. If empty, check USB connection or udev rules (e.g., for Canon: `echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="04a9", MODE="0666", GROUP="plugdev"' | sudo tee /etc/udev/rules.d/99-canon.rules`).
+- **No Stream**: Ensure ffmpeg is installed and test manually: `ffmpeg -re -loop 1 -i test.jpg -f rtsp rtsp://localhost:8554/stream`.
+- **Logs Missing**: Verify `/tmp` permissions: `ls -ld /tmp` (should be drwxrwxrwt). Fix with `sudo chmod 1777 /tmp`.
 
-Credits
+## Credits
 
-    Generated By: Grok, an AI assistant created by xAI, in collaboration with cpknight.
-    License: MIT License (see below).
+- **Generated By**: **Grok**, an AI assistant created by **xAI**, in collaboration with **cpknight**.
+- **License**: MIT License (see below).
 
-License
+## License
 
 This project is licensed under the MIT License:
 
-[CODE]
+```
 MIT License
 
-Copyright (c) 2025 cpknight
+Copyright (c) 2025 cpknight and contributors.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -121,4 +113,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-[/CODE] 
+```
