@@ -19,11 +19,18 @@ It includes an installer script (`install_digicam_rtsp.sh`) to set up the servic
 - `Linux`: Tested on Ubuntu/Debian-like systems; requires `sudo` privileges.
 - `gphoto2`: For camera control (`sudo apt-get install gphoto2`).
 - `ffmpeg`: For RTSP streaming (`sudo apt-get install ffmpeg`).
+- `rtsp-simple-server`: For serving the RTSP stream (download from [](https://github.com/aler9/rtsp-simple-server/releases)).
 - A USB-connected digital camera supported by `gphoto2` (check with `gphoto2 --list-cameras`).
 
 ## Installation
 
 - **Clone the Repository**: `git clone https://github.com/cpknight/digicam-rtsp.git; cd digicam-rtsp`
+- **Install `rtsp-simple-server`**:
+```bash
+wget https://github.com/aler9/rtsp-simple-server/releases/download/v0.21.2/rtsp-simple-server_v0.21.2_linux_amd64.tar.gz
+tar -xzvf rtsp-simple-server_v0.21.2_linux_amd64.tar.gz
+sudo mv rtsp-simple-server /usr/local/bin/
+```
 - **Make Scripts Executable**: `chmod +x digicam-rtsp.sh install_digicam_rtsp.sh`
 - **Test Manually**: `sudo ./digicam-rtsp.sh`
   - Without a camera, it’ll exit with “Error: No camera detected.”
