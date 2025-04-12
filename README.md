@@ -34,7 +34,7 @@ sudo mv rtsp-simple-server /usr/local/bin/
 - **Make Scripts Executable**: `chmod +x digicam-rtsp.sh install_digicam_rtsp.sh`
 - **Test Manually**: `sudo ./digicam-rtsp.sh`
   - Without a camera, it’ll exit with “Error: No camera detected.”
-  - With a camera, test the stream: vlc rtsp://localhost:8554/stream.
+  - With a camera, test the stream: `vlc rtsp://localhost:8554/stream`.
 - **Install as a Service**: `sudo ./install_digicam_rtsp.sh`
   - Installs to `/usr/local/bin/digicam-rtsp.sh` and sets up `/etc/systemd/system/digicam-rtsp.service`.
 - **Manage the Service**: 
