@@ -11,7 +11,7 @@ It includes an installer script (`install_digicam_rtsp.sh`) to set up the servic
 - Captures snapshots every 12 seconds (5 per minute) from a gPhoto2-supported camera.
 - Streams snapshots as an RTSP feed at `rtsp://localhost:8554/stream`.
 - Runs as a `systemd` service with automatic restart on failure.
-- Includes debug logging to /tmp/digicam-rtsp/instance_<random>/debug.log, preserved at /tmp/digicam-rtsp/last_debug.log on exit.
+- Includes debug logging to `/tmp/digicam-rtsp/instance_<random>/debug.log`, preserved at `/tmp/digicam-rtsp/last_debug.log` on exit.
 - Graceful handling of no camera, timeouts, and CTRL+C interrupts.
 
 ## Prerequisites
@@ -19,7 +19,7 @@ It includes an installer script (`install_digicam_rtsp.sh`) to set up the servic
 - `Linux`: Tested on Ubuntu/Debian-like systems; requires `sudo` privileges.
 - `gphoto2`: For camera control (`sudo apt-get install gphoto2`).
 - `ffmpeg`: For RTSP streaming (`sudo apt-get install ffmpeg`).
-- `rtsp-simple-server`: For serving the RTSP stream (download from [](https://github.com/aler9/rtsp-simple-server/releases)).
+- `rtsp-simple-server`: For serving the RTSP stream (download from [github.com/aler9/rtsp-simple-server/releases](https://github.com/aler9/rtsp-simple-server/releases)).
 - A USB-connected digital camera supported by `gphoto2` (check with `gphoto2 --list-cameras`).
 
 ## Installation
