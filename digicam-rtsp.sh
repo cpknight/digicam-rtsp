@@ -10,6 +10,8 @@ CAPTURE_SCRIPT="$TEMP_DIR/capture_snapshots.sh"
 CAPTURE_PID_FILE="$TEMP_DIR/capture.pid"
 DEBUG_LOG="$TEMP_DIR/debug.log"
 LAST_DEBUG_LOG="$BASE_TEMP_DIR/last_debug.log"
+RTSP_PID_FILE="$TEMP_DIR/rtsp.pid"
+RTSP_CONFIG="$TEMP_DIR/rtsp-simple-server.yml"
 
 # Check if running as root
 if [ "$(id -u)" -ne 0 ]; then
@@ -43,7 +45,7 @@ check_dir_writable() {
 
 # Function to write the capture script
 write_capture_script() {
-    echo "Main script: Writing capture script to $CAPTURE_SCRIPT..."
+    echo "Main script: Writing capture script to $CAPTURE_SCRIPT..." >&2
     cat > "$CAPTURE_SCRIPT" << 'EOF'
 #!/bin/bash
 
@@ -78,7 +80,7 @@ while true; do
     ((COUNTER++))
     find "$TEMP_DIR" -name "snapshot_*.jpg" -delete 2>>"$DEBUG_LOG"
     log_message "Cleaned up old snapshots"
-    sleep 12
+    sleep 20
 done
 EOF
     if [ $? -eq 0 ] && [ -f "$CAPTURE_SCRIPT" ]; then
@@ -92,6 +94,24 @@ EOF
     else
         log_message "Error: Failed to write capture script to $CAPTURE_SCRIPT"
         echo "Error: Cannot write capture script to $CAPTURE_SCRIPT" >&2
+        cleanup
+        exit 1
+    fi
+}
+
+# Function to write rtsp-simple-server config
+write_rtsp_config() {
+    echo "Main script: Writing rtsp-simple-server config to $RTSP_CONFIG..." >&2
+    cat > "$RTSP_CONFIG" << 'EOF'
+rtspAddress: :8554
+paths:
+  stream:
+EOF
+    if [ $? -eq 0 ] && [ -f "$RTSP_CONFIG" ]; then
+        log_message "rtsp-simple-server config written successfully"
+    else
+        log_message "Error: Failed to write rtsp-simple-server config to $RTSP_CONFIG"
+        echo "Error: Cannot write rtsp-simple-server config to $RTSP_CONFIG" >&2
         cleanup
         exit 1
     fi
@@ -120,6 +140,17 @@ cleanup() {
         echo "Main script: Stopping ffmpeg (PID: $FFMPEG_PID)..." >&2
         kill "$FFMPEG_PID" 2>>"$DEBUG_LOG"
         wait "$FFMPEG_PID" 2>>"$DEBUG_LOG"
+    fi
+    # Stop rtsp-simple-server if running
+    if [ -f "$RTSP_PID_FILE" ]; then
+        RTSP_PID=$(cat "$RTSP_PID_FILE" 2>/dev/null)
+        if [ -n "$RTSP_PID" ] && ps -p "$RTSP_PID" > /dev/null; then
+            log_message "Stopping rtsp-simple-server (PID: $RTSP_PID)"
+            echo "Main script: Stopping rtsp-simple-server (PID: $RTSP_PID)..." >&2
+            kill "$RTSP_PID" 2>>"$DEBUG_LOG"
+            wait "$RTSP_PID" 2>>"$DEBUG_LOG"
+        fi
+        rm -f "$RTSP_PID_FILE" 2>>"$DEBUG_LOG"
     fi
     # Copy debug log for post-mortem analysis
     if [ -f "$DEBUG_LOG" ]; then
@@ -165,6 +196,16 @@ find "$BASE_TEMP_DIR" -maxdepth 1 -type d -not -path "$BASE_TEMP_DIR" -not -path
             wait "$OLD_PID" 2>/dev/null
         fi
     fi
+    rtsp_pid_file="$subdir/rtsp.pid"
+    if [ -f "$rtsp_pid_file" ]; then
+        OLD_RTSP_PID=$(cat "$rtsp_pid_file" 2>/dev/null)
+        if [ -n "$OLD_RTSP_PID" ] && ps -p "$OLD_RTSP_PID" > /dev/null; then
+            log_message "Found old rtsp-simple-server process (PID: $OLD_RTSP_PID) in $subdir, terminating"
+            echo "Main script: Found old rtsp-simple-server process (PID: $OLD_RTSP_PID) in $subdir, terminating..." >&2
+            kill "$OLD_RTSP_PID" 2>/dev/null
+            wait "$OLD_RTSP_PID" 2>/dev/null
+        fi
+    fi
     log_message "Removing old subdirectory $subdir"
     echo "Main script: Removing old subdirectory $subdir..." >&2
     rm -rf "$subdir" 2>/dev/null
@@ -184,7 +225,13 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
     cleanup
     exit 1
 fi
-log_message "Dependencies checked: gphoto2 and ffmpeg found"
+if ! command -v rtsp-simple-server >/dev/null 2>&1; then
+    log_message "Error: rtsp-simple-server not installed"
+    echo "Error: rtsp-simple-server is not installed. Please install it (e.g., download from https://github.com/aler9/rtsp-simple-server)" >&2
+    cleanup
+    exit 1
+fi
+log_message "Dependencies checked: gphoto2, ffmpeg, and rtsp-simple-server found"
 
 # Check for camera
 echo "Main script: Checking for camera..." >&2
@@ -200,6 +247,23 @@ elif [ -z "$CAMERA_OUTPUT" ] || ! echo "$CAMERA_OUTPUT" | grep -q "usb:"; then
     echo "Warning: No clear camera detection. Proceeding, but capture may fail." >&2
 fi
 log_message "Camera check output: $CAMERA_OUTPUT"
+
+# Write and start rtsp-simple-server with config
+write_rtsp_config
+echo "Main script: Starting rtsp-simple-server..." >&2
+log_message "Starting rtsp-simple-server"
+rtsp-simple-server "$RTSP_CONFIG" >>"$DEBUG_LOG" 2>&1 &
+RTSP_PID=$!
+echo $RTSP_PID > "$RTSP_PID_FILE" 2>>"$DEBUG_LOG" || {
+    log_message "Error: Failed to write PID to $RTSP_PID_FILE"
+    echo "Error: Cannot write PID to $RTSP_PID_FILE" >&2
+    cleanup
+    exit 1
+}
+log_message "rtsp-simple-server started (PID: $RTSP_PID)"
+echo "Main script: rtsp-simple-server started (PID: $RTSP_PID)" >&2
+# Wait to ensure server is up
+sleep 2
 
 # Write and start the capture script
 write_capture_script
@@ -264,7 +328,7 @@ log_message "First snapshot detected at $SNAPSHOT_FILE"
 # Start ffmpeg streaming
 echo "Main script: Starting ffmpeg RTSP stream..." >&2
 log_message "Starting ffmpeg RTSP stream"
-ffmpeg -re -loop 1 -i "$SNAPSHOT_FILE" -c:v libx264 -g 5 -f rtsp rtsp://localhost:8554/stream 2>>"$DEBUG_LOG" &
+ffmpeg -re -loop 1 -i "$SNAPSHOT_FILE" -vf scale=1280:720 -pix_fmt yuv420p -c:v libx264 -g 5 -r 5 -f rtsp -rtsp_transport tcp rtsp://localhost:8554/stream 2>>"$DEBUG_LOG" &
 FFMPEG_PID=$!
 log_message "ffmpeg started (PID: $FFMPEG_PID)"
 echo "Main script: ffmpeg started (PID: $FFMPEG_PID)" >&2
@@ -288,6 +352,19 @@ while [ $INTERRUPTED -eq 0 ]; do
     if ! ps -p "$FFMPEG_PID" > /dev/null; then
         log_message "Error: ffmpeg process (PID: $FFMPEG_PID) died"
         echo "Main script: Error: ffmpeg process (PID: $FFMPEG_PID) died." >&2
+        echo "Debug log contents:" >&2
+        if [ -f "$DEBUG_LOG" ]; then
+            cat "$DEBUG_LOG" >&2
+        else
+            echo "No debug log found at $DEBUG_LOG" >&2
+        fi
+        echo "Last debug log available at: $LAST_DEBUG_LOG" >&2
+        cleanup
+        exit 1
+    fi
+    if ! ps -p "$RTSP_PID" > /dev/null; then
+        log_message "Error: rtsp-simple-server process (PID: $RTSP_PID) died"
+        echo "Main script: Error: rtsp-simple-server process (PID: $RTSP_PID) died." >&2
         echo "Debug log contents:" >&2
         if [ -f "$DEBUG_LOG" ]; then
             cat "$DEBUG_LOG" >&2
